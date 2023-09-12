@@ -1,6 +1,0 @@
-print("ahoj")
-input()
-print("\033[2J")
-print("\\033[40A")
-print("\033[31m")
-print("ahoj")

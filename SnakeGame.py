@@ -1,5 +1,5 @@
 from DisplayServer import DisplayServer, OBSTACLE, HEAD, BODY, FOOD, EMPTY
-from MusicServer import MusicServer
+from MusicServer import MusicServer, GAME_OVER, EAT, WIN
 from random import randint
 import math
 
@@ -140,11 +140,14 @@ class SnakeGame:
         self.update_direction()
         next_position : Position = Position(self.snakePieces[0].x + self.direction.x, self.snakePieces[0].y + self.direction.y)
         if self.obstacle_hit(next_position) or self.snake_hit(next_position):
+            self.music.play(GAME_OVER, False)
             return False
         if self.food_eaten(next_position):
             if len(self.availableSpots) == 0:
                 self.won = True
+                self.music.play(WIN, False)
                 return True
+            self.music.play(EAT, False)
             self.score += 1
             self.snakePieces.insert(0, next_position)
             self.display.setPixel(next_position.x, next_position.y, HEAD)

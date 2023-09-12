@@ -1,4 +1,4 @@
-from MusicServer import MusicServer
+from MusicServer import MusicServer, THEME
 from SnakeGame import SnakeGame, UP, DOWN, LEFT, RIGHT
 from DisplayServer import DisplayServer, EMPTY
 from threading import Thread
@@ -38,6 +38,7 @@ class Runner:
         self.display = DisplayServer(self.height, self.width, self.clearing)
         self.music = MusicServer()
         self.snake = SnakeGame(self.display, self.music, self.base_length)
+        self.music.play(THEME, True)
 
     def display_runner(self):
         while self.run_display:
@@ -54,6 +55,7 @@ class Runner:
     def exit_game(self):
         self.run_display = False
         self.run_game = False
+        self.music.can_continue = False
         system("cls")
         
     def game_over(self):
