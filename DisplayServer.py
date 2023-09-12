@@ -50,18 +50,3 @@ class DisplayServer:
                 text += self.framebuffer[y][x]
             text += "\n"
         print(text, end='')
-        
-if __name__ == "__main__":
-    height = 57
-    width = 50       
-    display = DisplayServer(height, width, True, 0.1)
-    display.setText(0, 0, "ahoj zdraví display server", True)
-    for y in range(1, height):
-        for x in range(0, width):
-            display.setPixel(x, y, OBSTACLE)
-    print("\033c", end='')
-    display.draw()
-    input()
-    print("\033c", end='')
-    while True:
-        display.draw()

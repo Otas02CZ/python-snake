@@ -1,4 +1,3 @@
-
 from DisplayServer import DisplayServer, OBSTACLE, HEAD, BODY, FOOD, EMPTY
 from MusicServer import MusicServer
 from random import randint
@@ -28,8 +27,7 @@ class SnakeGame:
     music: MusicServer
     base_length: int
     direction: Position
-    
-    
+
     def __init__(self, display: DisplayServer, music: MusicServer, base_length: int):
         self.running = False
         self.display = display
@@ -40,6 +38,13 @@ class SnakeGame:
         self.score = 0
         self.base_length = base_length
         self.direction = Position(-1, 0)
+        
+    def reset_game(self):
+        self.direction = Position(-1, 0)
+        self.snakePieces = []
+        self.obstacles = []
+        self.score = 0
+        self.display.clear()
         
     def create_food(self):
         while True:
@@ -106,9 +111,7 @@ class SnakeGame:
         return False
     
     def food_eaten(self, next_position: Position) -> bool:
-        if self.food.x == next_position.x and self.food.y == next_position.y:
-            return True
-        return False
+        return self.food.x == next_position.x and self.food.y == next_position.y
     
     def run_game(self) -> bool:
         next_position : Position = Position(self.snakePieces[0].x + self.direction.x, self.snakePieces[0].y + self.direction.y)
@@ -129,5 +132,3 @@ class SnakeGame:
         self.display.setArea(0, self.display.width-1, 0, 1, EMPTY)
         self.display.setText(0, 0, f"Score: {self.score}", True)
         return True
-    
-            

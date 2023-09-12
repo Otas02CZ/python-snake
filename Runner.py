@@ -5,7 +5,6 @@ from threading import Thread
 from pynput import keyboard
 from time import sleep
 
-
 class GAME_STATE:
     game_inner: bool
     
@@ -22,9 +21,11 @@ class Runner:
     music: MusicServer
     draw_sleep: float
     game_sleep: float
+    game_ender: bool
     
     def __init__(self, height: int, width: int, clearing: bool, draw_sleep: float, game_sleep: float, base_length: int):
         self.running = False
+        self.game_ended = False
         self.run_display = True
         self.run_game = True
         self.height = height
@@ -55,8 +56,10 @@ class Runner:
         
     def game_over(self):
         self.running = False
+        self.game_ended = True
+        self.snake.change_running_state(False)
         self.display.setArea(0, self.display.width-1, 0, 1, EMPTY)
-        self.display.setText(0, 0, f"Game over. Score: {self.snake.score}", True)
+        self.display.setText(0, 0, f"Game over. Score: {self.snake.score} Press Enter to reload and play again", True)
 
     def pause_game(self):
         if self.running:
@@ -66,9 +69,13 @@ class Runner:
             self.display.setText(0, 0, "Game paused. press enter to continue or esc to end", True)
            
     def continue_game(self):
-        self.running = True
-        self.snake.change_running_state(True)
-            
+        if self.game_ended:
+            self.snake.reset_game()
+            self.prepare_game()
+            self.game_ended = False
+        else:
+            self.running = True
+            self.snake.change_running_state(True)
 
     def process_input(self, key):
         match key:
@@ -87,10 +94,10 @@ class Runner:
                 self.snake.change_direction(UP)
             case keyboard.Key.down:
                 self.snake.change_direction(DOWN)
-        
-
+    
     def prepare_game(self):
         self.snake.prepare_game()
+        self.display.setArea(0, self.display.width-1, 0, 1, EMPTY)
         self.display.setText(0, 0, "Press Enter to start the game", True)
         
     def runner(self):
@@ -101,13 +108,8 @@ class Runner:
         input_thread.start()
         render_thread.start()
         game_thread.start()
-
         self.prepare_game()
-
-
         input_thread.join()
-
-        
 
 HEIGHT = 57
 WIDTH = 50
@@ -117,8 +119,6 @@ GAME_SLEEP = 0.1
 BASE_LENGTH = 4
 RUN_GAME = True
 RUN_DISPLAY = True
-
-running = False
 
 runner : Runner = Runner(HEIGHT, WIDTH, CLEARING, DRAW_SLEEP, GAME_SLEEP, BASE_LENGTH)
 runner.runner()
