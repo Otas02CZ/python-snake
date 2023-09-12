@@ -6,6 +6,7 @@ HEAD = "aa"
 BODY = "=="
 EMPTY = "  "
 
+
 class DisplayServer:
     framebuffer : []
     height: int

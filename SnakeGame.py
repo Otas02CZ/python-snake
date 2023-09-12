@@ -10,7 +10,7 @@ class Position:
     def __init__(self, x: int, y: int):
         self.x = x
         self.y = y
-    
+
 UP = Position(0, -1)
 DOWN = Position(0, 1)
 LEFT = Position(-1, 0)
@@ -27,6 +27,9 @@ class SnakeGame:
     music: MusicServer
     base_length: int
     direction: Position
+    new_direction: Position
+    availableSpots: list[Position]
+    won: bool
 
     def __init__(self, display: DisplayServer, music: MusicServer, base_length: int):
         self.running = False
@@ -34,42 +37,61 @@ class SnakeGame:
         self.music = music
         self.obstacles = []
         self.snakePieces = []
+        self.availableSpots = []
         self.food = None
         self.score = 0
         self.base_length = base_length
+        self.new_direction = Position(-1, 0)
         self.direction = Position(-1, 0)
+        self.won = False
         
     def reset_game(self):
         self.direction = Position(-1, 0)
+        self.new_direction = Position(-1, 0)
         self.snakePieces = []
         self.obstacles = []
+        self.availableSpots = []
         self.score = 0
+        self.won = False
         self.display.clear()
-        
+    
+    def init_available_spots(self):
+        for y in range(1, self.display.height):
+            for x in range(self.display.width):
+                available = True
+                for obstacle in self.obstacles:
+                    if obstacle.x == x and obstacle.y == y:
+                        available = False
+                        break
+                for snakePiece in self.snakePieces:
+                    if snakePiece.x == x and snakePiece.y == y:
+                        available = False
+                        break
+                if available:
+                    self.availableSpots.append(Position(x, y))
+
+
+    def remove_spot(self, position: Position):
+        for index in range(len(self.availableSpots)):
+            spot = self.availableSpots[index]
+            if spot.x == position.x and spot.y == position.y:
+                self.availableSpots.pop(index)
+                break
+           
     def create_food(self):
-        while True:
-            y_cor = randint(1, self.display.height-1)
-            x_cor = randint(0, self.display.width-1)
-            will_continue = False
-            for obstacle in self.obstacles:
-                if obstacle.x == x_cor and obstacle.y == y_cor:
-                    will_continue = True
-            if will_continue:
-                continue
-            for snakePiece in self.snakePieces:
-                if snakePiece.x == x_cor and snakePiece.y == y_cor:
-                    will_continue = True
-            if will_continue:
-                continue
-            self.food = Position(x_cor, y_cor)
-            self.display.setPixel(x_cor, y_cor, FOOD)
-            break
+        index = randint(0, len(self.availableSpots)-1)
+        self.food = self.availableSpots[index]
+        self.display.setPixel(self.food.x, self.food.y, FOOD)
+        self.availableSpots.pop(index)
+    
+    def update_direction(self):
+        if self.new_direction.x + self.direction.x == 0 and self.new_direction.y + self.direction.y == 0:
+            return
+        self.direction = self.new_direction
     
     def change_direction(self, direction: Position):
         if self.running:
-            if direction.x + self.direction.x == 0 and direction.y + self.direction.y == 0:
-                return
-            self.direction = direction
+            self.new_direction = direction
     
     def change_running_state(self, running):
         self.running = running;                
@@ -96,6 +118,7 @@ class SnakeGame:
             else:
                 self.display.setPixel(x_cor, y_cor, BODY)
             x_cor += 1
+        self.init_available_spots()
         self.create_food()
         
     def obstacle_hit(self, next_position: Position) -> bool:
@@ -114,10 +137,14 @@ class SnakeGame:
         return self.food.x == next_position.x and self.food.y == next_position.y
     
     def run_game(self) -> bool:
+        self.update_direction()
         next_position : Position = Position(self.snakePieces[0].x + self.direction.x, self.snakePieces[0].y + self.direction.y)
         if self.obstacle_hit(next_position) or self.snake_hit(next_position):
             return False
         if self.food_eaten(next_position):
+            if len(self.availableSpots) == 0:
+                self.won = True
+                return True
             self.score += 1
             self.snakePieces.insert(0, next_position)
             self.display.setPixel(next_position.x, next_position.y, HEAD)
@@ -125,7 +152,9 @@ class SnakeGame:
             self.create_food()
         else:
             self.snakePieces.insert(0, next_position)
+            self.remove_spot(next_position)
             last_piece : Position = self.snakePieces.pop()
+            self.availableSpots.append(last_piece)
             self.display.setPixel(last_piece.x, last_piece.y, EMPTY)
             self.display.setPixel(next_position.x, next_position.y, HEAD)
             self.display.setPixel(self.snakePieces[1].x, self.snakePieces[1].y, BODY)

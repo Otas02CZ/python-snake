@@ -4,6 +4,7 @@ from DisplayServer import DisplayServer, EMPTY
 from threading import Thread
 from pynput import keyboard
 from time import sleep
+from os import system
 
 class GAME_STATE:
     game_inner: bool
@@ -53,14 +54,19 @@ class Runner:
     def exit_game(self):
         self.run_display = False
         self.run_game = False
+        system("cls")
         
     def game_over(self):
         self.running = False
         self.game_ended = True
         self.snake.change_running_state(False)
-        self.display.setArea(0, self.display.width-1, 0, 1, EMPTY)
-        self.display.setText(0, 0, f"Game over. Score: {self.snake.score} Press Enter to reload and play again", True)
-
+        if self.snake.won:
+            self.display.setArea(0, self.display.width-1, 0, 1, EMPTY)
+            self.display.setText(0, 0, f"You have won. Score: {self.snake.score} Press Enter to reload or esc to end", True)
+        else:
+            self.display.setArea(0, self.display.width-1, 0, 1, EMPTY)
+        self.display.setText(0, 0, f"Game over. Score: {self.snake.score} Press Enter to reload or esc to end", True)
+        
     def pause_game(self):
         if self.running:
             self.snake.change_running_state(False)
@@ -111,10 +117,10 @@ class Runner:
         self.prepare_game()
         input_thread.join()
 
-HEIGHT = 57
-WIDTH = 50
+HEIGHT = 40
+WIDTH = 40
 CLEARING = True
-DRAW_SLEEP = 0.05
+DRAW_SLEEP = 0.035
 GAME_SLEEP = 0.1
 BASE_LENGTH = 4
 RUN_GAME = True
