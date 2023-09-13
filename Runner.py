@@ -1,9 +1,9 @@
-from MusicServer import MusicServer, THEME
+from MusicServer import MusicServer, THEME, THEME_NAME, GAME_OVER, GAME_OVER_NAME, EAT, EAT_NAME, WIN, WIN_NAME
 from SnakeGame import SnakeGame, UP, DOWN, LEFT, RIGHT
 from DisplayServer import DisplayServer, EMPTY
 from threading import Thread
 from pynput import keyboard
-from time import sleep
+from time import sleep, time
 from os import system
 
 class GAME_STATE:
@@ -23,6 +23,7 @@ class Runner:
     draw_sleep: float
     game_sleep: float
     game_ender: bool
+    frame_time_list: list[float]
     
     def __init__(self, height: int, width: int, clearing: bool, draw_sleep: float, game_sleep: float, base_length: int):
         self.running = False
@@ -35,15 +36,34 @@ class Runner:
         self.clearing = clearing
         self.draw_sleep = draw_sleep
         self.game_sleep = game_sleep
-        self.display = DisplayServer(self.height, self.width, self.clearing)
+        self.frame_time_list = []
+        self.display = DisplayServer(self.height, self.width, self.clearing, EMPTY)
         self.music = MusicServer()
+        self.music.load_sound(THEME, THEME_NAME)
+        self.music.load_sound(GAME_OVER, GAME_OVER_NAME)
+        self.music.load_sound(EAT, EAT_NAME)
+        self.music.load_sound(WIN, WIN_NAME)
         self.snake = SnakeGame(self.display, self.music, self.base_length)
-        self.music.play(THEME, True)
+        self.music.play(THEME_NAME, True)
 
+    def fps_displayer(self):
+        while self.run_display:
+            self.display.setArea(0, self.display.width, 1, 2, EMPTY)
+            average_frame_time = sum(self.frame_time_list) / len(self.frame_time_list)
+            try:
+                self.display.setText(0, 1, f"AVERAGE FPS: {round(1000000/average_frame_time, 2)}", True)
+            except:
+                pass
+            sleep(self.game_sleep)
+    
     def display_runner(self):
         while self.run_display:
+            timestamp = time() * 1000000
             self.display.draw()
-            sleep(self.draw_sleep)
+            self.frame_time_list.append(time() * 1000000 - timestamp)
+            if (len(self.frame_time_list) > 100):
+                self.frame_time_list.pop(0)
+            #sleep(self.draw_sleep)
 
     def game_runner(self):
         while self.run_game:
@@ -57,6 +77,7 @@ class Runner:
         self.run_game = False
         self.music.can_continue = False
         system("cls")
+        self.clear_input_buffer()
         
     def game_over(self):
         self.running = False
@@ -103,6 +124,15 @@ class Runner:
             case keyboard.Key.down:
                 self.snake.change_direction(DOWN)
     
+    def clear_input_buffer(slef):
+        try:
+            import msvcrt
+            while msvcrt.kbhit():
+                msvcrt.getch()
+        except ImportError:
+            import sys, termios
+            termios.tcflush(sys.stdin, termios.TCIOFLUSH)
+    
     def prepare_game(self):
         self.snake.prepare_game()
         self.display.setArea(0, self.display.width-1, 0, 1, EMPTY)
@@ -112,17 +142,19 @@ class Runner:
         render_thread = Thread(target=self.display_runner, name="RENDER")
         game_thread = Thread(target=self.game_runner, name="GAME")
         input_thread = keyboard.Listener(on_press=self.process_input)
+        fps_display_thread = Thread(target=self.fps_displayer, name="FPS DISPLAYER")
 
         input_thread.start()
         render_thread.start()
         game_thread.start()
+        fps_display_thread.start()
         self.prepare_game()
         input_thread.join()
 
-HEIGHT = 40
-WIDTH = 40
+HEIGHT = 50
+WIDTH = 50
 CLEARING = True
-DRAW_SLEEP = 0.035
+DRAW_SLEEP = 0.001
 GAME_SLEEP = 0.1
 BASE_LENGTH = 4
 RUN_GAME = True

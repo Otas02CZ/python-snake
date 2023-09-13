@@ -1,5 +1,5 @@
 from DisplayServer import DisplayServer, OBSTACLE, HEAD, BODY, FOOD, EMPTY
-from MusicServer import MusicServer, GAME_OVER, EAT, WIN
+from MusicServer import MusicServer, GAME_OVER_NAME, EAT_NAME, WIN_NAME
 from random import randint
 import math
 
@@ -56,7 +56,7 @@ class SnakeGame:
         self.display.clear()
     
     def init_available_spots(self):
-        for y in range(1, self.display.height):
+        for y in range(2, self.display.height):
             for x in range(self.display.width):
                 available = True
                 for obstacle in self.obstacles:
@@ -100,11 +100,11 @@ class SnakeGame:
         y_cor : int = self.display.height-1
         x_cor : int = self.display.width-1
         for x in range(self.display.width):
-            self.obstacles.append(Position(x, 1))
+            self.obstacles.append(Position(x, 2))
             self.obstacles.append(Position(x, y_cor))
-            self.display.setPixel(x, 1, OBSTACLE)
+            self.display.setPixel(x, 2, OBSTACLE)
             self.display.setPixel(x, y_cor, OBSTACLE)
-        for y in range(1, self.display.height):
+        for y in range(2, self.display.height):
             self.obstacles.append(Position(0, y))
             self.obstacles.append(Position(x_cor, y))
             self.display.setPixel(0, y, OBSTACLE)
@@ -130,6 +130,8 @@ class SnakeGame:
     def snake_hit(self, next_position: Position) -> bool:
         for snakePiece in self.snakePieces:
             if snakePiece.x == next_position.x and snakePiece.y == next_position.y:
+                if snakePiece == self.snakePieces[len(self.snakePieces)-1]:
+                    break
                 return True
         return False
     
@@ -140,24 +142,25 @@ class SnakeGame:
         self.update_direction()
         next_position : Position = Position(self.snakePieces[0].x + self.direction.x, self.snakePieces[0].y + self.direction.y)
         if self.obstacle_hit(next_position) or self.snake_hit(next_position):
-            self.music.play(GAME_OVER, False)
+            self.music.play(GAME_OVER_NAME, False)
             return False
         if self.food_eaten(next_position):
             if len(self.availableSpots) == 0:
                 self.won = True
-                self.music.play(WIN, False)
+                self.music.play(WIN_NAME, False)
                 return True
-            self.music.play(EAT, False)
+            self.music.play(EAT_NAME, False)
             self.score += 1
             self.snakePieces.insert(0, next_position)
             self.display.setPixel(next_position.x, next_position.y, HEAD)
             self.display.setPixel(self.snakePieces[1].x, self.snakePieces[1].y, BODY)
             self.create_food()
         else:
-            self.snakePieces.insert(0, next_position)
-            self.remove_spot(next_position)
             last_piece : Position = self.snakePieces.pop()
             self.availableSpots.append(last_piece)
+            self.snakePieces.insert(0, next_position)
+            self.remove_spot(next_position)
+            
             self.display.setPixel(last_piece.x, last_piece.y, EMPTY)
             self.display.setPixel(next_position.x, next_position.y, HEAD)
             self.display.setPixel(self.snakePieces[1].x, self.snakePieces[1].y, BODY)

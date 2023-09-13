@@ -11,15 +11,17 @@ class DisplayServer:
     height: int
     width: int
     clearing: bool
+    clearPixel: str
     
-    def __init__(self, height: int, width: int, clearing: bool):
+    def __init__(self, height: int, width: int, clearing: bool, clearPixel: str = EMPTY):
         self.height = height
         self.width = width
         self.clearing = clearing
+        self.clearPixel = clearPixel
         self.clear()
     
     def clear(self):
-        self.framebuffer = [[EMPTY for x in range(self.width)] for y in range(self.height)]
+        self.framebuffer = [[self.clearPixel for x in range(self.width)] for y in range(self.height)]
     
     def setArea(self, x_s, x_e, y_s, y_e, pixel):
         for y in range(y_s, y_e):
@@ -41,12 +43,42 @@ class DisplayServer:
                 x_cor = x
             y_cor += 1
     
-    def draw(self):
-        if self.clearing:
-            system("cls")
+    def draw_optimised_two(self):
+        # lines = [[self.framebuffer[y][x] for x in range(self.width)].append("\n") for y in range(self.height)]
+    
+        # text = "".join(lines) + "\n"
+        
+        lines = []
+        for y in range(self.height):
+            lines.append("".join(self.framebuffer[y][x] for x in range(self.width)))
+    
+        text = "\n".join(lines) + "\n"
+        #print(text, end='')
+    
+    def draw_optimised(self):
+        text = "\n".join("".join(self.framebuffer[y][x] for x in range(self.width)) for y in range(self.height))
+        text += "\n"
+        
+        
+    def draw_normal(self):
         text = ""
         for y in range(self.height):
             for x in range(self.width):
                 text += self.framebuffer[y][x]
             text += "\n"
+    
+    def draw_old(self):
+        if self.clearing:
+            print("\033[H\033[J", end='')
+        text = ""
+        for y in range(self.height):
+            for x in range(self.width):
+                text += self.framebuffer[y][x]
+            text += "\n"
+        print(text, end='')
+    
+    def draw(self):
+        if self.clearing:
+            print("\033[H\033[J", end='')
+        text = "\n".join("".join(self.framebuffer[y][x] for x in range(self.width)) for y in range(self.height)) + "\n"
         print(text, end='')
